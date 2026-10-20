@@ -13,6 +13,19 @@
     padding: 20px; user-select: none;
   }
   h1 { font-size: 26px; margin-top: 0; margin-bottom: 10px; color: #e94560; text-shadow: 0 0 10px rgba(233,69,96,0.5); }
+  
+  /* Стили для кнопок сложности */
+  .difficulty-selector {
+    display: flex; gap: 10px; margin-bottom: 20px;
+    background: #16213e; padding: 5px; border-radius: 30px;
+  }
+  .diff-btn {
+    background: transparent; border: none; color: #a8a8b3;
+    padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px;
+    cursor: pointer; transition: 0.2s;
+  }
+  .diff-btn.active { background: #e94560; color: #fff; box-shadow: 0 0 10px rgba(233,69,96,0.5); }
+  
   .status { font-size: 18px; margin-bottom: 20px; height: 25px; font-weight: 600; color: #a8a8b3; }
   
   .board {
@@ -61,30 +74,49 @@
 <body>
 
   <h1>🤖 Крестики-Нолики</h1>
+  
+  <div class="difficulty-selector">
+    <button class="diff-btn" data-diff="easy">Легко</button>
+    <button class="diff-btn" data-diff="medium">Средне</button>
+    <button class="diff-btn active" data-diff="hard">Сложно</button>
+  </div>
+
   <div class="status" id="status">Твой ход (Ты — X)</div>
   
   <div class="board" id="board"></div>
 
   <button class="reset-btn" id="reset">Играть заново</button>
   
-  <a href="index.html" class="back-link">← Вернуться к Печеньке 🍪</a>
+  <a href="index.html" class="back-link">← Вернуться в меню</a>
 
 <script>
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const resetBtn = document.getElementById('reset');
+const diffBtns = document.querySelectorAll('.diff-btn');
 
 let board = ['', '', '', '', '', '', '', '', ''];
 let human = 'X';
 let ai = 'O';
 let currentPlayer = human;
 let gameActive = true;
+let difficulty = 'hard'; // По умолчанию сложно
 
 const winPatterns = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
   [0, 3, 6], [1, 4, 7], [2, 5, 8],
   [0, 4, 8], [2, 4, 6]
 ];
+
+// --- Смена сложности ---
+diffBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    diffBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    difficulty = btn.dataset.diff;
+    resetGame(); // Сбрасываем игру при смене сложности
+  });
+});
 
 function createBoard() {
   boardEl.innerHTML = '';
@@ -117,11 +149,46 @@ function makeMove(index, player) {
   cell.classList.add(player === human ? 'x' : 'o');
 }
 
+// --- Логика хода ИИ ---
 function aiMove() {
   if (!gameActive) return;
   
+  let move;
+  
+  if (difficulty === 'easy') {
+    // Легко: просто случайный ход
+    move = getRandomMove();
+  } 
+  else if (difficulty === 'medium') {
+    // Средне: 50% шанс случайного хода, 50% умного
+    if (Math.random() < 0.5) {
+      move = getRandomMove();
+    } else {
+      move = getBestMove();
+    }
+  } 
+  else {
+    // Сложно: всегда умный ход (Минимакс)
+    move = getBestMove();
+  }
+
+  if (move !== undefined && move !== -1) {
+    makeMove(move, ai);
+    checkGameEnd();
+  }
+}
+
+// Функция случайного хода
+function getRandomMove() {
+  const emptyCells = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+  if (emptyCells.length === 0) return -1;
+  return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+}
+
+// Функция умного хода (Минимакс)
+function getBestMove() {
   let bestScore = -Infinity;
-  let move = -1;
+  let bestMove = -1;
 
   for (let i = 0; i < board.length; i++) {
     if (board[i] === '') {
@@ -130,15 +197,11 @@ function aiMove() {
       board[i] = '';
       if (score > bestScore) {
         bestScore = score;
-        move = i;
+        bestMove = i;
       }
     }
   }
-
-  if (move !== -1) {
-    makeMove(move, ai);
-    checkGameEnd();
-  }
+  return bestMove;
 }
 
 function minimax(newBoard, depth, isMaximizing) {
@@ -174,6 +237,7 @@ function minimax(newBoard, depth, isMaximizing) {
   }
 }
 
+// --- Проверка победы и конец игры ---
 function checkWinner(b) {
   for (let pattern of winPatterns) {
     const [a, c, d] = pattern;
@@ -193,7 +257,7 @@ function checkGameEnd() {
     if (winner === 'draw') {
       statusEl.textContent = 'Ничья! 🤝';
     } else if (winner === human) {
-      statusEl.textContent = 'Ты победил! 🎉 (Как?!)';
+      statusEl.textContent = 'Ты победил! 🎉';
       highlightWin();
     } else {
       statusEl.textContent = 'ИИ победил! 🤖';
