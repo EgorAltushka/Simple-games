@@ -14,13 +14,13 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     pointer-events: none; z-index: 10; color: #fff; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
   }
-  .ui-layer.active { pointer-events: auto; }
   
-  .score-display { font-size: 60px; font-weight: bold; position: absolute; top: 20px; }
+  .score-display { font-size: 60px; font-weight: bold; position: absolute; top: 20px; display: none; }
   
   .screen {
     background: rgba(0,0,0,0.7); padding: 30px; border-radius: 20px; text-align: center;
     display: none; flex-direction: column; align-items: center; border: 3px solid #fff;
+    pointer-events: auto; /* ВОТ ЭТА СТРОЧКА ЧИНИТ КНОПКУ */
   }
   .screen.active { display: flex; }
   .screen h1 { margin: 0 0 10px 0; font-size: 28px; }
@@ -30,6 +30,7 @@
     background: #ffcc66; color: #000; border: none; padding: 15px 40px;
     font-size: 20px; font-weight: bold; border-radius: 30px; cursor: pointer;
     box-shadow: 0 5px 0 #b37700; text-shadow: none;
+    pointer-events: auto; /* И здесь на всякий случай */
   }
   .start-btn:active { transform: translateY(5px); box-shadow: none; }
   
@@ -77,29 +78,21 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// --- Настройки игры ---
 const GRAVITY = 0.6;
 const JUMP_FORCE = -8;
 const PIPE_WIDTH = 70;
 const PIPE_GAP = 180;
 const PIPE_SPEED = 3;
-const PIPE_SPAWN_RATE = 120; // кадров между трубами
+const PIPE_SPAWN_RATE = 120; 
 
 let bird, pipes, score, frames, gameState, bestScore;
 bestScore = localStorage.getItem('flappyBest') || 0;
 document.getElementById('bestScore').textContent = bestScore;
 
-// Эмодзи для печеньки
 const birdEmoji = '🍪';
 
 function resetGame() {
-  bird = {
-    x: cw / 4,
-    y: ch / 2,
-    vy: 0,
-    size: 40,
-    rotation: 0
-  };
+  bird = { x: cw / 4, y: ch / 2, vy: 0, size: 40, rotation: 0 };
   pipes = [];
   score = 0;
   frames = 0;
@@ -114,63 +107,46 @@ function spawnPipe() {
   const minHeight = 100;
   const maxHeight = ch - PIPE_GAP - 100;
   const topHeight = Math.floor(Math.random() * (maxHeight - minHeight + 1)) + minHeight;
-  
-  pipes.push({
-    x: cw,
-    topHeight: topHeight,
-    bottomY: topHeight + PIPE_GAP,
-    passed: false
-  });
+  pipes.push({ x: cw, topHeight: topHeight, bottomY: topHeight + PIPE_GAP, passed: false });
 }
 
 function update() {
   if (gameState !== 'playing') return;
 
-  // Физика печеньки
   bird.vy += GRAVITY;
   bird.y += bird.vy;
   
-  // Наклон печеньки
   if (bird.vy < 0) {
     bird.rotation = -0.3;
   } else {
     bird.rotation = Math.min(Math.PI / 2, bird.vy * 0.1);
   }
 
-  // Столкновение с полом и потолком
-  if (bird.y + bird.size / 2 > ch || bird.y - bird.size / 2 < 0) {
+  if (bird.y + bird.size / 2 > ch - 80 || bird.y - bird.size / 2 < 0) {
     endGame();
   }
 
-  // Генерация труб
   frames++;
   if (frames % PIPE_SPAWN_RATE === 0) {
     spawnPipe();
   }
 
-  // Движение труб
   for (let i = pipes.length - 1; i >= 0; i--) {
     let p = pipes[i];
     p.x -= PIPE_SPEED;
 
-    // Проверка на столкновение (хитбоксы)
-    if (
-      bird.x + bird.size / 2 > p.x && 
-      bird.x - bird.size / 2 < p.x + PIPE_WIDTH
-    ) {
+    if (bird.x + bird.size / 2 > p.x && bird.x - bird.size / 2 < p.x + PIPE_WIDTH) {
       if (bird.y - bird.size / 2 < p.topHeight || bird.y + bird.size / 2 > p.bottomY) {
         endGame();
       }
     }
 
-    // Подсчет очков
     if (p.x + PIPE_WIDTH < bird.x - bird.size / 2 && !p.passed) {
       p.passed = true;
       score++;
       document.getElementById('scoreDisplay').textContent = score;
     }
 
-    // Удаление труб, ушедших за экран
     if (p.x + PIPE_WIDTH < 0) {
       pipes.splice(i, 1);
     }
@@ -178,41 +154,31 @@ function update() {
 }
 
 function draw() {
-  // Очистка экрана
   ctx.clearRect(0, 0, cw, ch);
-  
-  // Фон (небо)
   ctx.fillStyle = '#4ec0ca';
   ctx.fillRect(0, 0, cw, ch);
 
-  // Земля
   ctx.fillStyle = '#ded895';
   ctx.fillRect(0, ch - 80, cw, 80);
   ctx.fillStyle = '#73bf2e';
   ctx.fillRect(0, ch - 80, cw, 20);
 
-  // Трубы
   ctx.fillStyle = '#73bf2e';
   ctx.strokeStyle = '#543847';
   ctx.lineWidth = 4;
   
   for (let p of pipes) {
-    // Верхняя труба
     ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
     ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.topHeight);
-    // Крышка верхней трубы
     ctx.fillRect(p.x - 5, p.topHeight - 30, PIPE_WIDTH + 10, 30);
     ctx.strokeRect(p.x - 5, p.topHeight - 30, PIPE_WIDTH + 10, 30);
 
-    // Нижняя труба
     ctx.fillRect(p.x, p.bottomY, PIPE_WIDTH, ch - p.bottomY);
     ctx.strokeRect(p.x, p.bottomY, PIPE_WIDTH, ch - p.bottomY);
-    // Крышка нижней трубы
     ctx.fillRect(p.x - 5, p.bottomY, PIPE_WIDTH + 10, 30);
     ctx.strokeRect(p.x - 5, p.bottomY, PIPE_WIDTH + 10, 30);
   }
 
-  // Печенька (с наклоном)
   ctx.save();
   ctx.translate(bird.x, bird.y);
   ctx.rotate(bird.rotation);
@@ -232,45 +198,32 @@ function loop() {
 function endGame() {
   if (gameState !== 'playing') return;
   gameState = 'gameover';
-  
   if (score > bestScore) {
     bestScore = score;
     localStorage.setItem('flappyBest', bestScore);
   }
-  
   document.getElementById('finalScore').textContent = score;
   document.getElementById('bestScore').textContent = bestScore;
   document.getElementById('gameOverScreen').classList.add('active');
   document.getElementById('scoreDisplay').style.display = 'none';
 }
 
-// Управление
-function handleInput(e) {
-  if (e.type === 'touchstart' || e.type === 'mousedown') {
-    if (gameState === 'playing') {
-      bird.vy = JUMP_FORCE;
-    }
+function handleInput() {
+  if (gameState === 'playing') {
+    bird.vy = JUMP_FORCE;
   }
 }
 
-// Обработчики кнопок
-document.getElementById('startBtn').addEventListener('click', () => {
-  resetGame();
-});
-document.getElementById('restartBtn').addEventListener('click', () => {
-  resetGame();
-});
+document.getElementById('startBtn').addEventListener('click', resetGame);
+document.getElementById('restartBtn').addEventListener('click', resetGame);
 
 canvas.addEventListener('touchstart', (e) => {
-  e.preventDefault(); // Предотвращаем зум и скролл
-  if (gameState === 'playing') handleInput(e);
+  e.preventDefault();
+  handleInput();
 }, { passive: false });
 
-canvas.addEventListener('mousedown', (e) => {
-  if (gameState === 'playing') handleInput(e);
-});
+canvas.addEventListener('mousedown', handleInput);
 
-// Запуск
 bird = { x: cw/4, y: ch/2, vy: 0, size: 40, rotation: 0 };
 pipes = [];
 score = 0;
