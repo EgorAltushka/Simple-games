@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Печенька-кликер 2.0</title>
+<title>Печенька-кликер</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
@@ -19,10 +19,10 @@
   .per-sec { font-size: 14px; color: #c9a87a; margin-bottom: 12px; height: 18px; }
 
   .cookie-btn {
-    width: 220px; height: 220px; border-radius: 50%; border: none;
+    width: 200px; height: 200px; border-radius: 50%; border: none;
     background: radial-gradient(circle at 35% 30%, #f0b070, #b8742a 70%, #8a5218);
     box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset -8px -10px 20px rgba(0,0,0,0.3), inset 6px 6px 16px rgba(255,220,150,0.4);
-    font-size: 120px; display: flex; align-items: center; justify-content: center;
+    font-size: 110px; display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: transform 0.06s; touch-action: manipulation;
     position: relative; z-index: 2;
   }
@@ -30,17 +30,13 @@
   .cookie-btn.pop { animation: pop 0.12s; }
   @keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.06);} 100%{transform:scale(1);} }
 
-  /* Летающие циферки */
   .floating-text {
     position: fixed; pointer-events: none; font-weight: 900; font-size: 24px;
     color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); z-index: 100;
     animation: floatUp 0.8s ease-out forwards;
   }
   .floating-text.crit { color: #ff2e63; font-size: 36px; text-shadow: 0 0 15px #ff2e63, 0 2px 10px rgba(0,0,0,0.8); }
-  @keyframes floatUp { 
-    0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
-  }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(1.2); opacity: 0; } }
 
   .golden {
     position: fixed; width: 70px; height: 70px; border-radius: 50%;
@@ -51,9 +47,15 @@
   }
   @keyframes float { from{transform:translateY(0);} to{transform:translateY(-10px);} }
 
-  .shop { width: 100%; max-width: 480px; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 2;}
-  .shop-title { font-size: 14px; color: #c9a87a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-  .upgrade {
+  .tabs { display: flex; gap: 10px; margin-top: 20px; width: 100%; max-width: 480px; }
+  .tab-btn {
+    flex: 1; padding: 12px; background: #241609; border: 1px solid #4a3018; border-radius: 10px;
+    color: #c9a87a; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s;
+  }
+  .tab-btn.active { background: #4a3018; color: #fff; border-color: #ffcc66; }
+
+  .shop { width: 100%; max-width: 480px; margin-top: 10px; display: flex; flex-direction: column; gap: 10px; z-index: 2;}
+  .upgrade, .achievement-card {
     display: flex; align-items: center; justify-content: space-between;
     background: linear-gradient(135deg, #2e1d10, #241609); border: 1px solid #4a3018;
     border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: 0.15s;
@@ -66,19 +68,40 @@
   .upg-desc { font-size: 12px; color: #b39870; }
   .upg-cost { font-weight: 800; color: #ffcc66; font-size: 15px; white-space: nowrap; }
 
+  .achievement-card { cursor: default; border-color: #333; background: #1a1008; }
+  .achievement-card.unlocked { border-color: #9b59b6; background: linear-gradient(135deg, #2c113a, #1a0a24); }
+  .ach-icon { font-size: 30px; margin-right: 15px; filter: grayscale(1); opacity: 0.3; }
+  .achievement-card.unlocked .ach-icon { filter: grayscale(0); opacity: 1; text-shadow: 0 0 10px rgba(155,89,182,0.8); }
+  .ach-info { flex: 1; text-align: left; }
+  .ach-name { font-weight: 700; font-size: 16px; color: #666; }
+  .achievement-card.unlocked .ach-name { color: #d7bde2; }
+  .ach-desc { font-size: 12px; color: #444; margin-top: 2px; }
+  .achievement-card.unlocked .ach-desc { color: #9b59b6; }
+
   .toast {
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
     background: rgba(255,200,80,0.95); color: #2a1600; padding: 10px 20px; border-radius: 20px;
     font-weight: 700; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 20;
   }
   .toast.show { opacity: 1; }
+  
+  .achievement-popup {
+    position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, #8e44ad, #5e3370); color: #fff; padding: 15px 25px;
+    border-radius: 15px; font-weight: bold; box-shadow: 0 10px 30px rgba(142,68,173,0.5);
+    display: flex; align-items: center; gap: 15px; z-index: 1000; transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 2px solid #d7bde2;
+  }
+  .achievement-popup.show { top: 20px; }
+  .ach-popup-icon { font-size: 30px; }
+
   .reset { margin-top: 24px; font-size: 12px; color: #6b5030; background: none; border: none; cursor: pointer; }
   .back-link { margin-top: 15px; color: #c9a87a; text-decoration: none; font-size: 14px; border-bottom: 1px solid #c9a87a; padding-bottom: 2px; }
 </style>
 </head>
 <body>
 
-  <h1>🍪 ПЕЧЕНЬКА-КЛИКЕР 2.0</h1>
+  <h1>🍪 ПЕЧЕНЬКА-КЛИКЕР</h1>
   
   <div class="score-container">
     <div class="score" id="score">0</div>
@@ -87,17 +110,30 @@
 
   <button class="cookie-btn" id="cookie">🍪</button>
 
-  <div class="shop" id="shop">
-    <div class="shop-title">Улучшения</div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabShop" onclick="switchTab('shop')">Улучшения</button>
+    <button class="tab-btn" id="tabAch" onclick="switchTab('ach')">Достижения</button>
   </div>
+
+  <div class="shop" id="shop"></div>
+  <div class="shop" id="achList" style="display: none;"></div>
 
   <button class="reset" id="reset">Сбросить прогресс</button>
   <a href="index.html" class="back-link">← Вернуться в меню</a>
+  
   <div class="toast" id="toast"></div>
+  
+  <div class="achievement-popup" id="achPopup">
+    <div class="ach-popup-icon" id="achPopupIcon">🏆</div>
+    <div>
+      <div style="font-size: 12px; opacity: 0.8;">Достижение получено!</div>
+      <div id="achPopupName" style="font-size: 16px;">Название</div>
+    </div>
+  </div>
 
 <script>
 let cookies = 0; let totalCookies = 0; let clickPower = 1;
-let critChance = 0.1; // 10% шанс крита
+let totalClicks = 0; let goldenClicked = 0; let totalUpgradesBought = 0;
 
 const upgrades = [
   { id: 'finger', name: 'Крепкий палец', desc: '+1 за тап', cost: 10, type: 'click', value: 1, count: 0 },
@@ -110,55 +146,78 @@ const upgrades = [
   { id: 'space', name: 'Космическая печь', desc: '+100 печенек/сек', cost: 3000, type: 'auto', value: 100, count: 0 },
 ];
 
-let perSec = 0;
+const achievements = [
+  { id: 'click_10', name: 'Разминка', desc: 'Сделай 10 кликов', icon: '👆', unlocked: false, check: () => totalClicks >= 10 },
+  { id: 'click_100', name: 'Палец-молот', desc: 'Сделай 100 кликов', icon: '💪', unlocked: false, check: () => totalClicks >= 100 },
+  { id: 'cookies_1k', name: 'Сладкоежка', desc: 'Испеки 1,000 печенек', icon: '🍬', unlocked: false, check: () => totalCookies >= 1000 },
+  { id: 'cookies_10k', name: 'Кондитер', desc: 'Испеки 10,000 печенек', icon: '🎂', unlocked: false, check: () => totalCookies >= 10000 },
+  { id: 'cookies_100k', name: 'Сахарный магнат', desc: 'Испеки 100,000 печенек', icon: '👑', unlocked: false, check: () => totalCookies >= 100000 },
+  { id: 'buy_1', name: 'Первая покупка', desc: 'Купи любое улучшение', icon: '🛒', unlocked: false, check: () => totalUpgradesBought >= 1 },
+  { id: 'buy_10', name: 'Шопоголик', desc: 'Купи 10 улучшений', icon: '💰', unlocked: false, check: () => totalUpgradesBought >= 10 },
+  { id: 'golden_1', name: 'Золотая лихорадка', desc: 'Поймай золотую печеньку', icon: '✨', unlocked: false, check: () => goldenClicked >= 1 },
+  { id: 'golden_5', name: 'Охотник за золотом', desc: 'Поймай 5 золотых печенек', icon: '🏹', unlocked: false, check: () => goldenClicked >= 5 }
+];
 
-// --- АУДИО (Синтезатор браузера) ---
+let perSec = 0;
+let currentTab = 'shop';
+
 let audioCtx;
 function playSound(type) {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+  const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
   osc.connect(gain); gain.connect(audioCtx.destination);
-  
   if (type === 'click') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.05);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
     osc.start(); osc.stop(audioCtx.currentTime + 0.05);
   } else if (type === 'crit') {
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.type = 'square'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
   }
 }
 
-// --- ЛОГИКА ИГРЫ ---
 function load() {
   try {
-    const s = JSON.parse(localStorage.getItem('clickerSaveV2'));
+    const s = JSON.parse(localStorage.getItem('clickerSaveV3'));
     if (!s) return;
     cookies = s.cookies || 0; totalCookies = s.totalCookies || 0; clickPower = s.clickPower || 1;
+    totalClicks = s.totalClicks || 0; goldenClicked = s.goldenClicked || 0; totalUpgradesBought = s.totalUpgradesBought || 0;
     if (s.upgrades) { s.upgrades.forEach(saved => { const u = upgrades.find(x => x.id === saved.id); if (u) u.count = saved.count || 0; }); }
+    if (s.achievements) { s.achievements.forEach(saved => { const a = achievements.find(x => x.id === saved.id); if (a) a.unlocked = saved.unlocked; }); }
   } catch (e) {}
 }
 function save() {
-  localStorage.setItem('clickerSaveV2', JSON.stringify({
-    cookies, totalCookies, clickPower,
-    upgrades: upgrades.map(u => ({ id: u.id, count: u.count }))
+  localStorage.setItem('clickerSaveV3', JSON.stringify({
+    cookies, totalCookies, clickPower, totalClicks, goldenClicked, totalUpgradesBought,
+    upgrades: upgrades.map(u => ({ id: u.id, count: u.count })),
+    achievements: achievements.map(a => ({ id: a.id, unlocked: a.unlocked }))
   }));
 }
+
 function recalc() { perSec = 0; for (const u of upgrades) { if (u.type === 'auto') perSec += u.value * u.count; } }
 function fmt(n) { n = Math.floor(n); if (n < 1000) return n.toString(); if (n < 1e6) return (n/1e3).toFixed(1).replace('.0','') + 'К'; if (n < 1e9) return (n/1e6).toFixed(1).replace('.0','') + 'М'; return (n/1e9).toFixed(1).replace('.0','') + 'Б'; }
 
-const elScore = document.getElementById('score'); const elPerSec = document.getElementById('perSec'); const elShop = document.getElementById('shop'); const elToast = document.getElementById('toast');
-function render() { elScore.textContent = fmt(cookies); elPerSec.textContent = perSec > 0 ? `+${fmt(perSec)} в секунду` : ''; renderShop(); }
+const elScore = document.getElementById('score'); const elPerSec = document.getElementById('perSec'); 
+const elShop = document.getElementById('shop'); const elAchList = document.getElementById('achList');
+
+function render() {
+  elScore.textContent = fmt(cookies);
+  elPerSec.textContent = perSec > 0 ? `+${fmt(perSec)} в секунду` : '';
+  if (currentTab === 'shop') renderShop(); else renderAchievements();
+  checkAchievements();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabShop').classList.toggle('active', tab === 'shop');
+  document.getElementById('tabAch').classList.toggle('active', tab === 'ach');
+  if (tab === 'shop') { elShop.style.display = 'flex'; elAchList.style.display = 'none'; renderShop(); }
+  else { elShop.style.display = 'none'; elAchList.style.display = 'flex'; renderAchievements(); }
+}
 
 function renderShop() {
   [...elShop.querySelectorAll('.upgrade')].forEach(e => e.remove());
@@ -179,23 +238,56 @@ function renderShop() {
   }
 }
 
+function renderAchievements() {
+  elAchList.innerHTML = '';
+  for (const a of achievements) {
+    const div = document.createElement('div');
+    div.className = 'achievement-card' + (a.unlocked ? ' unlocked' : '');
+    div.innerHTML = `
+      <div class="ach-icon">${a.unlocked ? a.icon : '🔒'}</div>
+      <div class="ach-info">
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.unlocked ? a.desc : '???'}</div>
+      </div>
+    `;
+    elAchList.appendChild(div);
+  }
+}
+
+function checkAchievements() {
+  let newlyUnlocked = false;
+  for (const a of achievements) {
+    if (!a.unlocked && a.check()) {
+      a.unlocked = true;
+      newlyUnlocked = true;
+      showAchievementPopup(a);
+    }
+  }
+  if (newlyUnlocked) {
+    save();
+    if (currentTab === 'ach') renderAchievements();
+  }
+}
+
+let achPopupTimer;
+function showAchievementPopup(a) {
+  const popup = document.getElementById('achPopup');
+  document.getElementById('achPopupIcon').textContent = a.icon;
+  document.getElementById('achPopupName').textContent = a.name;
+  popup.classList.add('show');
+  clearTimeout(achPopupTimer);
+  achPopupTimer = setTimeout(() => popup.classList.remove('show'), 3000);
+}
+
 function buyUpgrade(u) {
   if (cookies < u.cost) return;
-  cookies -= u.cost; u.count++;
+  cookies -= u.cost; u.count++; totalUpgradesBought++;
   if (u.type === 'click') clickPower += u.value;
   u.cost = Math.floor(u.cost * 1.15);
-  recalc(); render(); save(); showToast(`Куплено: ${u.name}!`);
+  recalc(); render(); save();
 }
 
-let toastTimer;
-function showToast(msg) {
-  elToast.textContent = msg; elToast.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => elToast.classList.remove('show'), 1500);
-}
-
-// --- КЛИК ПО ПЕЧЕНЬКЕ И ЛЕТАЮЩИЕ ЦИФРЫ ---
 const elCookie = document.getElementById('cookie');
-
 function createFloatingText(x, y, text, isCrit) {
   const el = document.createElement('div');
   el.className = 'floating-text' + (isCrit ? ' crit' : '');
@@ -206,33 +298,22 @@ function createFloatingText(x, y, text, isCrit) {
 }
 
 elCookie.addEventListener('click', (e) => {
-  // Проверяем на крит
-  const isCrit = Math.random() < critChance;
+  const isCrit = Math.random() < 0.1;
   const earned = isCrit ? clickPower * 10 : clickPower;
-  
-  cookies += earned;
-  totalCookies += earned;
-  
-  // Анимация и звук
+  cookies += earned; totalCookies += earned; totalClicks++;
   elCookie.classList.remove('pop'); void elCookie.offsetWidth; elCookie.classList.add('pop');
   playSound(isCrit ? 'crit' : 'click');
-  
-  // Получаем координаты клика (или тапа)
   const rect = elCookie.getBoundingClientRect();
   const clickX = e.clientX || (rect.left + rect.width / 2);
   const clickY = e.clientY || (rect.top + rect.height / 2);
-  
-  createFloatingText(clickX - 20, clickY - 20, (isCrit ? '+' : '+') + fmt(earned) + (isCrit ? '!' : ''), isCrit);
-  
+  createFloatingText(clickX - 20, clickY - 20, '+' + fmt(earned) + (isCrit ? '!' : ''), isCrit);
   render(); save();
 });
 
-// --- ПАССИВНЫЙ ДОХОД ---
 setInterval(() => {
   if (perSec > 0) { cookies += perSec; totalCookies += perSec; render(); save(); }
 }, 1000);
 
-// --- ЗОЛОТАЯ ПЕЧЕНЬКА ---
 function spawnGolden() {
   if (document.querySelector('.golden')) return;
   const g = document.createElement('div');
@@ -241,8 +322,7 @@ function spawnGolden() {
   g.style.left = (20 + Math.random() * maxX) + 'px'; g.style.top = (20 + Math.random() * maxY) + 'px';
   g.addEventListener('click', () => {
     const bonus = Math.max(10, Math.floor(perSec * 10) + clickPower * 20);
-    cookies += bonus; totalCookies += bonus;
-    showToast(`Золотая печенька! +${fmt(bonus)} 🍪`);
+    cookies += bonus; totalCookies += bonus; goldenClicked++;
     playSound('crit'); g.remove(); render(); save();
   });
   document.body.appendChild(g);
@@ -250,9 +330,8 @@ function spawnGolden() {
 }
 setInterval(() => { if (Math.random() < 0.5) spawnGolden(); }, 60000);
 
-// --- СБРОС ---
 document.getElementById('reset').addEventListener('click', () => {
-  if (confirm('Точно сбросить весь прогресс?')) { localStorage.removeItem('clickerSaveV2'); location.reload(); }
+  if (confirm('Точно сбросить весь прогресс и достижения?')) { localStorage.removeItem('clickerSaveV3'); location.reload(); }
 });
 
 load(); recalc(); render();
