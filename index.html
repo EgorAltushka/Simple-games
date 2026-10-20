@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Печенька-кликер</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: radial-gradient(circle at 50% 0%, #3a2418, #1a0f08); color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 16px; user-select: none; }
+  h1 { font-size: 22px; margin: 8px 0; letter-spacing: 1px; }
+  .score { font-size: 44px; font-weight: 800; color: #ffcc66; text-shadow: 0 0 20px rgba(255,180,80,0.6); margin: 4px 0; }
+  .per-sec { font-size: 14px; color: #c9a87a; margin-bottom: 12px; height: 18px; }
+  .cookie-btn { width: 220px; height: 220px; border-radius: 50%; border: none; background: radial-gradient(circle at 35% 30%, #f0b070, #b8742a 70%, #8a5218); box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset -8px -10px 20px rgba(0,0,0,0.3), inset 6px 6px 16px rgba(255,220,150,0.4); font-size: 120px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.06s; touch-action: manipulation; }
+  .cookie-btn:active { transform: scale(0.93); }
+  .cookie-btn.pop { animation: pop 0.12s; }
+  @keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.06);} 100%{transform:scale(1);} }
+  .golden { position: fixed; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3a0, #ffb800 60%, #b37f00); box-shadow: 0 0 30px rgba(255,200,0,0.9), 0 0 60px rgba(255,200,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; animation: float 1.5s infinite alternate; z-index: 10; }
+  @keyframes float { from{transform:translateY(0);} to{transform:translateY(-10px);} }
+  .shop { width: 100%; max-width: 480px; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .shop-title { font-size: 14px; color: #c9a87a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .upgrade { display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #2e1d10, #241609); border: 1px solid #4a3018; border-radius: 14px; padding: 14px 16px; cursor: pointer; transition: 0.15s; }
+  .upgrade:active { transform: scale(0.98); }
+  .upgrade.disabled { opacity: 0.4; }
+  .upgrade.affordable { border-color: #ffcc66; box-shadow: 0 0 12px rgba(255,200,80,0.25); }
+  .upg-left { display: flex; flex-direction: column; text-align: left; gap: 2px; }
+  .upg-name { font-weight: 700; font-size: 16px; }
+  .upg-desc { font-size: 12px; color: #b39870; }
+  .upg-cost { font-weight: 800; color: #ffcc66; font-size: 15px; white-space: nowrap; }
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,200,80,0.95); color: #2a1600; padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; }
+  .reset { margin-top: 24px; font-size: 12px; color: #6b5030; background: none; border: none; cursor: pointer; }
+</style>
+</head>
+<body>
+  <h1>🍪 ПЕЧЕНЬКА-КЛИКЕР</h1>
+  <div class="score" id="score">0</div>
+  <div class="per-sec" id="perSec"></div>
+  <button class="cookie-btn" id="cookie">🍪</button>
+  <div class="shop" id="shop"><div class="shop-title">Улучшения</div></div>
+  <button class="reset" id="reset">Сбросить прогресс</button>
+  <div class="toast" id="toast"></div>
+<script>
+let cookies = 0; let totalCookies = 0; let clickPower = 1;
+const upgrades = [
+  { id: 'finger', name: 'Крепкий палец', desc: '+1 за тап', cost: 10, type: 'click', value: 1, count: 0 },
+  { id: 'helper', name: 'Помощник', desc: '+1 печенька/сек', cost: 25, type: 'auto', value: 1, count: 0 },
+  { id: 'oven', name: 'Печка', desc: '+5 печенек/сек', cost: 120, type: 'auto', value: 5, count: 0 },
+  { id: 'hands', name: 'Ловкие руки', desc: '+3 за тап', cost: 200, type: 'click', value: 3, count: 0 },
+  { id: 'factory', name: 'Фабрика', desc: '+25 печенек/сек', cost: 800, type: 'auto', value: 25, count: 0 },
+  { id: 'gold', name: 'Золотые руки', desc: '+10 за тап', cost: 1500, type: 'click', value: 10, count: 0 },
+];
+let perSec = 0;
+function load() { try { const s = JSON.parse(localStorage.getItem('clickerSave')); if (!s) return; cookies = s.cookies || 0; totalCookies = s.totalCookies || 0; clickPower = s.clickPower || 1; if (s.upgrades) { s.upgrades.forEach(saved => { const u = upgrades.find(x => x.id === saved.id); if (u) u.count = saved.count || 0; }); } } catch (e) {} }
+function save() { localStorage.setItem('clickerSave', JSON.stringify({ cookies, totalCookies, clickPower, upgrades: upgrades.map(u => ({ id: u.id, count: u.count })) })); }
+function recalc() { perSec = 0; for (const u of upgrades) { if (u.type === 'auto') perSec += u.value * u.count; } }
+function fmt(n) { n = Math.floor(n); if (n < 1000) return n.toString(); if (n < 1e6) return (n/1e3).toFixed(1).replace('.0','') + 'К'; if (n < 1e9) return (n/1e6).toFixed(1).replace('.0','') + 'М'; return (n/1e9).toFixed(1).replace('.0','') + 'Б'; }
+const elScore = document.getElementById('score'); const elPerSec = document.getElementById('perSec'); const elShop = document.getElementById('shop'); const elToast = document.getElementById('toast');
+function render() { elScore.textContent = fmt(cookies); elPerSec.textContent = perSec > 0 ? `+${fmt(perSec)} в секунду` : ''; renderShop(); }
+function renderShop() { [...elShop.querySelectorAll('.upgrade')].forEach(e => e.remove()); for (const u of upgrades) { const div = document.createElement('div'); div.className = 'upgrade'; const canAfford = cookies >= u.cost; if (!canAfford) div.classList.add('disabled'); else div.classList.add('affordable'); div.innerHTML = `<div class="upg-left"><span class="upg-name">${u.name} ${u.count > 0 ? '×'+u.count : ''}</span><span class="upg-desc">${u.desc}</span></div><span class="upg-cost">${fmt(u.cost)} 🍪</span>`; div.addEventListener('click', () => buyUpgrade(u)); elShop.appendChild(div); } }
+function buyUpgrade(u) { if (cookies < u.cost) return; cookies -= u.cost; u.count++; if (u.type === 'click') clickPower += u.value; u.cost = Math.floor(u.cost * 1.15); recalc(); render(); save(); showToast(`Куплено: ${u.name}!`); }
+let toastTimer; function showToast(msg) { elToast.textContent = msg; elToast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => elToast.classList.remove('show'), 1500); }
+const elCookie = document.getElementById('cookie'); elCookie.addEventListener('click', () => { cookies += clickPower; totalCookies += clickPower; elCookie.classList.remove('pop'); void elCookie.offsetWidth; elCookie.classList.add('pop'); render(); save(); });
+setInterval(() => { if (perSec > 0) { cookies += perSec; totalCookies += perSec; render(); save(); } }, 1000);
+function spawnGolden() { if (document.querySelector('.golden')) return; const g = document.createElement('div'); g.className = 'golden'; g.textContent = '✨'; const maxX = window.innerWidth - 90; const maxY = window.innerHeight - 90; g.style.left = (20 + Math.random() * maxX) + 'px'; g.style.top = (20 + Math.random() * maxY) + 'px'; g.addEventListener('click', () => { const bonus = Math.max(10, Math.floor(perSec * 10) + clickPower * 20); cookies += bonus; totalCookies += bonus; showToast(`Золотая печенька! +${fmt(bonus)} 🍪`); g.remove(); render(); save(); }); document.body.appendChild(g); setTimeout(() => g.remove(), 8000); }
+setInterval(() => { if (Math.random() < 0.5) spawnGolden(); }, 60000);
+document.getElementById('reset').addEventListener('click', () => { if (confirm('Точно сбросить весь прогресс?')) { localStorage.removeItem('clickerSave'); location.reload(); } });
+load(); recalc(); render();
+</script>
+</body>
+</html>
