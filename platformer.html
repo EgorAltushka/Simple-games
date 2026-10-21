@@ -106,30 +106,37 @@ const GRAVITY = 0.6;
 const FRICTION = 0.85;
 const JUMP_POWER = -12;
 const MOVE_SPEED = 1.5;
-const LEVEL_WIDTH = 2500; // Длина уровня (в 2.5 раза больше экрана)
+const LEVEL_WIDTH = 2500;
 
-let player, platforms, spikes, goal, cameraX, gameState, keys;
+// Инициализация переменных по умолчанию (чтобы игра не сломалась до старта)
+let player = { x: 0, y: 0, vx: 0, vy: 0, radius: 15, onGround: false };
+let platforms = [];
+let spikes = [];
+let goal = { x: 0, y: 0, w: 0, h: 0 };
+let cameraX = 0;
+let gameState = 'menu';
+let keys = { left: false, right: false, jump: false };
 
 // Данные уровня (каменное подземелье)
 const levelData = {
   playerStart: { x: 100, y: 200 },
   platforms: [
-    { x: 0, y: 500, w: 400, h: 100 },      // Стартовая земля
-    { x: 500, y: 450, w: 100, h: 20 },     // Первая ступенька
-    { x: 700, y: 380, w: 100, h: 20 },     // Вторая
-    { x: 900, y: 300, w: 100, h: 20 },     // Третья
-    { x: 1100, y: 450, w: 300, h: 20 },    // Длинная платформа
-    { x: 1300, y: 250, w: 100, h: 20 },    // Паркур вверх
+    { x: 0, y: 500, w: 400, h: 100 },      
+    { x: 500, y: 450, w: 100, h: 20 },     
+    { x: 700, y: 380, w: 100, h: 20 },     
+    { x: 900, y: 300, w: 100, h: 20 },     
+    { x: 1100, y: 450, w: 300, h: 20 },    
+    { x: 1300, y: 250, w: 100, h: 20 },    
     { x: 1500, y: 350, w: 100, h: 20 },
-    { x: 1700, y: 500, w: 400, h: 100 },   // Финальная земля
-    { x: 2200, y: 400, w: 100, h: 20 },    // Платформа к финишу
+    { x: 1700, y: 500, w: 400, h: 100 },   
+    { x: 2200, y: 400, w: 100, h: 20 },    
   ],
   spikes: [
-    { x: 400, y: 480, w: 100, h: 20 },     // Шипы после стартовой земли
-    { x: 1200, y: 430, w: 80, h: 20 },     // Шипы на длинной платформе
-    { x: 1800, y: 480, w: 100, h: 20 },    // Шипы перед финишем
+    { x: 400, y: 480, w: 100, h: 20 },     
+    { x: 1200, y: 430, w: 80, h: 20 },     
+    { x: 1800, y: 480, w: 100, h: 20 },    
   ],
-  goal: { x: 2250, y: 320, w: 40, h: 80 }  // Дверь-портал
+  goal: { x: 2250, y: 320, w: 40, h: 80 }  
 };
 
 function initGame() {
@@ -151,15 +158,12 @@ function initGame() {
   document.getElementById('winScreen').classList.remove('active');
 }
 
-// Управление (мультитач)
-keys = { left: false, right: false, jump: false };
-
+// Управление
 function bindBtn(id, key) {
   const btn = document.getElementById(id);
   btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
   btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
   btn.addEventListener('touchcancel', (e) => { e.preventDefault(); keys[key] = false; }, {passive: false});
-  // Для теста на ПК
   btn.addEventListener('mousedown', (e) => { e.preventDefault(); keys[key] = true; });
   btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
   btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
@@ -236,23 +240,22 @@ function update() {
     document.getElementById('winScreen').classList.add('active');
   }
 
-  // Камера (следит за игроком, не выходит за края уровня)
+  // Камера
   cameraX = player.x - cw / 2;
   if (cameraX < 0) cameraX = 0;
   if (cameraX > LEVEL_WIDTH - cw) cameraX = LEVEL_WIDTH - cw;
 }
 
 function draw() {
-  // Очистка и фон подземелья
+  // Очистка и фон
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, cw, ch);
 
-  // Отрисовка мира со смещением камеры
   ctx.save();
   ctx.translate(-cameraX, 0);
 
-  // Дальний фон (кирпичики)
+  // Кирпичики
   ctx.fillStyle = '#16162a';
   for(let i = 0; i < LEVEL_WIDTH; i += 80) {
     for(let j = 0; j < ch; j += 80) {
@@ -261,13 +264,11 @@ function draw() {
   }
 
   // Платформы
-  ctx.fillStyle = '#4a4a5a';
   for (let p of platforms) {
-    ctx.fillRect(p.x, p.y, p.w, p.h);
-    // Верхний блик
-    ctx.fillStyle = '#6a6a7a';
-    ctx.fillRect(p.x, p.y, p.w, 4);
     ctx.fillStyle = '#4a4a5a';
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+    ctx.fillStyle = '#6a6a7a'; // Верхний блик
+    ctx.fillRect(p.x, p.y, p.w, 4);
   }
 
   // Шипы
@@ -282,7 +283,7 @@ function draw() {
     ctx.fill();
   }
 
-  // Финиш (Дверь)
+  // Финиш
   ctx.fillStyle = '#00d2ff';
   ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
   ctx.fillStyle = '#fff';
@@ -290,7 +291,7 @@ function draw() {
   ctx.fillStyle = '#00d2ff';
   ctx.fillRect(goal.x + 10, goal.y + 10, goal.w - 20, goal.h - 20);
 
-  // Игрок (Красный шарик с глазиком)
+  // Игрок
   if (gameState !== 'menu') {
     ctx.beginPath();
     ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
@@ -298,7 +299,7 @@ function draw() {
     ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
     
-    // Глазик смотрит по направлению движения
+    // Глазик
     let eyeOffsetX = player.vx > 0.5 ? 5 : (player.vx < -0.5 ? -5 : 0);
     ctx.beginPath();
     ctx.arc(player.x + eyeOffsetX, player.y - 5, 4, 0, Math.PI * 2);
@@ -308,7 +309,7 @@ function draw() {
     ctx.fillStyle = '#000'; ctx.fill();
   }
 
-  ctx.restore(); // Возвращаем камеру
+  ctx.restore(); 
 }
 
 function loop() {
@@ -317,14 +318,13 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// Кнопки UI
+// Запуск
 document.getElementById('startBtn').addEventListener('click', initGame);
 document.getElementById('restartBtn').addEventListener('click', initGame);
 document.getElementById('nextLevelBtn').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
-gameState = 'menu';
 loop();
 </script>
 </body>
