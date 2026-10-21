@@ -15,62 +15,28 @@
     padding: 20px; user-select: none;
   }
   h1 { 
-    font-size: 32px; 
-    margin-bottom: 40px; 
-    text-align: center;
+    font-size: 32px; margin-bottom: 40px; text-align: center;
     background: -webkit-linear-gradient(#00d2ff, #3a7bd5);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     text-shadow: 0 0 20px rgba(0,210,255,0.2);
   }
-  
-  .games-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-    max-width: 400px;
-  }
-  
+  .games-grid { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 400px; }
   .game-card {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 20px;
-    text-decoration: none;
-    color: #fff;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+    display: flex; align-items: center;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px; padding: 20px; text-decoration: none; color: #fff;
+    transition: all 0.3s ease; backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   }
-  
-  .game-card:active {
-    transform: scale(0.97);
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
+  .game-card:active { transform: scale(0.97); background: rgba(255, 255, 255, 0.1); }
   .game-icon {
-    font-size: 50px;
-    margin-right: 20px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 15px;
-    width: 80px; height: 80px;
+    font-size: 50px; margin-right: 20px; background: rgba(0,0,0,0.3);
+    border-radius: 15px; width: 80px; height: 80px;
     display: flex; align-items: center; justify-content: center;
     box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
   }
-  
-  .game-info h2 {
-    margin: 0 0 5px 0;
-    font-size: 22px;
-  }
-  
-  .game-info p {
-    margin: 0;
-    font-size: 14px;
-    color: #a8a8b3;
-  }
+  .game-info h2 { margin: 0 0 5px 0; font-size: 22px; }
+  .game-info p { margin: 0; font-size: 14px; color: #a8a8b3; }
 </style>
 </head>
 <body>
@@ -79,7 +45,6 @@
 
   <div class="games-grid">
     
-    <!-- Карточка Печеньки -->
     <a href="CookieClicker.html" class="game-card">
       <div class="game-icon">🍪</div>
       <div class="game-info">
@@ -88,7 +53,6 @@
       </div>
     </a>
 
-    <!-- Карточка Крестиков-Ноликов -->
     <a href="tictactoe.html" class="game-card">
       <div class="game-icon">🤖</div>
       <div class="game-info">
@@ -97,12 +61,19 @@
       </div>
     </a>
 
-    <!-- Карточка Flappy Cookie -->
     <a href="flappy.html" class="game-card">
       <div class="game-icon">🐦</div>
       <div class="game-info">
         <h2>Flappy Cookie</h2>
         <p>Пролетай между трубами</p>
+      </div>
+    </a>
+
+    <a href="platformer.html" class="game-card">
+      <div class="game-icon">🔴</div>
+      <div class="game-info">
+        <h2>Красный Шарик</h2>
+        <p>Прыгай по подземелью</p>
       </div>
     </a>
 
