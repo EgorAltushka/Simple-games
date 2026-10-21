@@ -6,15 +6,18 @@
 <title>Красный Шарик: Подземелье</title>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; padding: 0; overflow: hidden; background-color: #1a1a2e; font-family: -apple-system, sans-serif; user-select: none; }
-  canvas { display: block; width: 100vw; height: 100vh; }
+  html, body { 
+    margin: 0; padding: 0; width: 100%; height: 100%; 
+    overflow: hidden; background-color: #1a1a2e; 
+    font-family: -apple-system, sans-serif; user-select: none; 
+  }
+  canvas { display: block; width: 100%; height: 100%; }
   
   .ui-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none; z-index: 10;
   }
   
-  /* Кнопки управления */
   .controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; }
   .left-controls { display: flex; gap: 20px; }
   .right-controls { display: flex; }
@@ -29,7 +32,6 @@
   .jump-btn { width: 100px; height: 100px; font-size: 40px; background: rgba(233, 69, 96, 0.3); border-color: #e94560; }
   .jump-btn:active { background: rgba(233, 69, 96, 0.6); }
 
-  /* Экраны (старт, смерть, победа) */
   .screen {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(15, 12, 41, 0.9); display: flex; flex-direction: column;
@@ -101,15 +103,13 @@ function resize() {
 }
 window.addEventListener('resize', resize); resize();
 
-// Физика и настройки
 const GRAVITY = 0.6;
 const FRICTION = 0.85;
 const JUMP_POWER = -12;
 const MOVE_SPEED = 1.5;
 const LEVEL_WIDTH = 2500;
 
-// Инициализация переменных по умолчанию (чтобы игра не сломалась до старта)
-let player = { x: 0, y: 0, vx: 0, vy: 0, radius: 15, onGround: false };
+let player = { x: 100, y: 200, vx: 0, vy: 0, radius: 15, onGround: false };
 let platforms = [];
 let spikes = [];
 let goal = { x: 0, y: 0, w: 0, h: 0 };
@@ -117,18 +117,17 @@ let cameraX = 0;
 let gameState = 'menu';
 let keys = { left: false, right: false, jump: false };
 
-// Данные уровня (каменное подземелье)
 const levelData = {
-  playerStart: { x: 100, y: 200 },
+  playerStart: { x: 100, y: 300 }, // Чуть подняли старт, чтобы не спавниться в полу
   platforms: [
-    { x: 0, y: 500, w: 400, h: 100 },      
+    { x: 0, y: 500, w: 400, h: 200 },      
     { x: 500, y: 450, w: 100, h: 20 },     
     { x: 700, y: 380, w: 100, h: 20 },     
     { x: 900, y: 300, w: 100, h: 20 },     
     { x: 1100, y: 450, w: 300, h: 20 },    
     { x: 1300, y: 250, w: 100, h: 20 },    
     { x: 1500, y: 350, w: 100, h: 20 },
-    { x: 1700, y: 500, w: 400, h: 100 },   
+    { x: 1700, y: 500, w: 400, h: 200 },   
     { x: 2200, y: 400, w: 100, h: 20 },    
   ],
   spikes: [
@@ -140,13 +139,7 @@ const levelData = {
 };
 
 function initGame() {
-  player = {
-    x: levelData.playerStart.x,
-    y: levelData.playerStart.y,
-    vx: 0, vy: 0,
-    radius: 15,
-    onGround: false
-  };
+  player = { x: levelData.playerStart.x, y: levelData.playerStart.y, vx: 0, vy: 0, radius: 15, onGround: false };
   platforms = levelData.platforms;
   spikes = levelData.spikes;
   goal = levelData.goal;
@@ -158,7 +151,6 @@ function initGame() {
   document.getElementById('winScreen').classList.remove('active');
 }
 
-// Управление
 function bindBtn(id, key) {
   const btn = document.getElementById(id);
   btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; }, {passive: false});
@@ -168,25 +160,19 @@ function bindBtn(id, key) {
   btn.addEventListener('mouseup', (e) => { e.preventDefault(); keys[key] = false; });
   btn.addEventListener('mouseleave', (e) => { e.preventDefault(); keys[key] = false; });
 }
-bindBtn('btnLeft', 'left');
-bindBtn('btnRight', 'right');
-bindBtn('btnJump', 'jump');
+bindBtn('btnLeft', 'left'); bindBtn('btnRight', 'right'); bindBtn('btnJump', 'jump');
 
-// Проверка столкновений
 function rectCollide(r1, r2) {
-  return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x &&
-         r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
+  return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
 }
 
 function update() {
   if (gameState !== 'playing') return;
 
-  // Движение влево/вправо
   if (keys.left) player.vx -= MOVE_SPEED;
   if (keys.right) player.vx += MOVE_SPEED;
   player.vx *= FRICTION;
   
-  // Прыжок
   if (keys.jump && player.onGround) {
     player.vy = JUMP_POWER;
     player.onGround = false;
@@ -209,11 +195,11 @@ function update() {
   player.onGround = false;
   for (let p of platforms) {
     if (rectCollide({x: player.x - player.radius, y: player.y - player.radius, w: player.radius*2, h: player.radius*2}, p)) {
-      if (player.vy > 0) { // Падаем
+      if (player.vy > 0) {
         player.y = p.y - player.radius;
         player.vy = 0;
         player.onGround = true;
-      } else if (player.vy < 0) { // Бьемся головой
+      } else if (player.vy < 0) {
         player.y = p.y + p.h + player.radius;
         player.vy = 0;
       }
@@ -228,26 +214,29 @@ function update() {
     }
   }
 
-  // Падение в пропасть
-  if (player.y > ch + 100) {
+  // Падение
+  if (player.y > 1000) { // Если упал ниже всего уровня
     gameState = 'gameover';
     document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  // Победа (дверь)
+  // Победа
   if (rectCollide({x: player.x - player.radius, y: player.y - player.radius, w: player.radius*2, h: player.radius*2}, goal)) {
     gameState = 'win';
     document.getElementById('winScreen').classList.add('active');
   }
 
-  // Камера
-  cameraX = player.x - cw / 2;
-  if (cameraX < 0) cameraX = 0;
-  if (cameraX > LEVEL_WIDTH - cw) cameraX = LEVEL_WIDTH - cw;
+  // Камера (безопасная)
+  if (LEVEL_WIDTH > cw) {
+    cameraX = player.x - cw / 2;
+    if (cameraX < 0) cameraX = 0;
+    if (cameraX > LEVEL_WIDTH - cw) cameraX = LEVEL_WIDTH - cw;
+  } else {
+    cameraX = (LEVEL_WIDTH - cw) / 2; // Если экран шире уровня, центрируем
+  }
 }
 
 function draw() {
-  // Очистка и фон
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, cw, ch);
@@ -258,7 +247,7 @@ function draw() {
   // Кирпичики
   ctx.fillStyle = '#16162a';
   for(let i = 0; i < LEVEL_WIDTH; i += 80) {
-    for(let j = 0; j < ch; j += 80) {
+    for(let j = 0; j < 1000; j += 80) {
       if ((i/80 + j/80) % 2 === 0) ctx.fillRect(i, j, 76, 76);
     }
   }
@@ -267,7 +256,7 @@ function draw() {
   for (let p of platforms) {
     ctx.fillStyle = '#4a4a5a';
     ctx.fillRect(p.x, p.y, p.w, p.h);
-    ctx.fillStyle = '#6a6a7a'; // Верхний блик
+    ctx.fillStyle = '#6a6a7a';
     ctx.fillRect(p.x, p.y, p.w, 4);
   }
 
@@ -299,7 +288,6 @@ function draw() {
     ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
     
-    // Глазик
     let eyeOffsetX = player.vx > 0.5 ? 5 : (player.vx < -0.5 ? -5 : 0);
     ctx.beginPath();
     ctx.arc(player.x + eyeOffsetX, player.y - 5, 4, 0, Math.PI * 2);
@@ -313,17 +301,18 @@ function draw() {
 }
 
 function loop() {
-  update();
-  draw();
+  try {
+    update();
+    draw();
+  } catch (e) {
+    console.error(e);
+  }
   requestAnimationFrame(loop);
 }
 
-// Запуск
 document.getElementById('startBtn').addEventListener('click', initGame);
 document.getElementById('restartBtn').addEventListener('click', initGame);
-document.getElementById('nextLevelBtn').addEventListener('click', () => {
-  window.location.href = 'index.html';
-});
+document.getElementById('nextLevelBtn').addEventListener('click', () => { window.location.href = 'index.html'; });
 
 loop();
 </script>
