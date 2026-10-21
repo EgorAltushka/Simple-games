@@ -103,22 +103,25 @@ function resize() {
 }
 window.addEventListener('resize', resize); resize();
 
+// Физика
 const GRAVITY = 0.6;
 const FRICTION = 0.85;
 const JUMP_POWER = -12;
 const MOVE_SPEED = 1.5;
 const LEVEL_WIDTH = 2500;
+const LEVEL_HEIGHT = 1000; // Высота уровня
 
-let player = { x: 100, y: 200, vx: 0, vy: 0, radius: 15, onGround: false };
+let player = { x: 100, y: 300, vx: 0, vy: 0, radius: 15, onGround: false };
 let platforms = [];
 let spikes = [];
 let goal = { x: 0, y: 0, w: 0, h: 0 };
 let cameraX = 0;
+let cameraY = 0;
 let gameState = 'menu';
 let keys = { left: false, right: false, jump: false };
 
 const levelData = {
-  playerStart: { x: 100, y: 300 }, // Чуть подняли старт, чтобы не спавниться в полу
+  playerStart: { x: 100, y: 300 },
   platforms: [
     { x: 0, y: 500, w: 400, h: 200 },      
     { x: 500, y: 450, w: 100, h: 20 },     
@@ -144,6 +147,7 @@ function initGame() {
   spikes = levelData.spikes;
   goal = levelData.goal;
   cameraX = 0;
+  cameraY = 0;
   gameState = 'playing';
   
   document.getElementById('startScreen').classList.remove('active');
@@ -214,8 +218,8 @@ function update() {
     }
   }
 
-  // Падение
-  if (player.y > 1000) { // Если упал ниже всего уровня
+  // Падение в пропасть
+  if (player.y > LEVEL_HEIGHT) {
     gameState = 'gameover';
     document.getElementById('gameOverScreen').classList.add('active');
   }
@@ -226,14 +230,16 @@ function update() {
     document.getElementById('winScreen').classList.add('active');
   }
 
-  // Камера (безопасная)
-  if (LEVEL_WIDTH > cw) {
-    cameraX = player.x - cw / 2;
-    if (cameraX < 0) cameraX = 0;
-    if (cameraX > LEVEL_WIDTH - cw) cameraX = LEVEL_WIDTH - cw;
-  } else {
-    cameraX = (LEVEL_WIDTH - cw) / 2; // Если экран шире уровня, центрируем
-  }
+  // Камера (следит и по X, и по Y)
+  cameraX = player.x - cw / 2;
+  if (cameraX < 0) cameraX = 0;
+  if (cameraX > LEVEL_WIDTH - cw) cameraX = LEVEL_WIDTH - cw;
+  if (LEVEL_WIDTH < cw) cameraX = (LEVEL_WIDTH - cw) / 2;
+
+  cameraY = player.y - ch / 2;
+  if (cameraY < 0) cameraY = 0;
+  if (cameraY > LEVEL_HEIGHT - ch) cameraY = LEVEL_HEIGHT - ch;
+  if (LEVEL_HEIGHT < ch) cameraY = (LEVEL_HEIGHT - ch) / 2;
 }
 
 function draw() {
@@ -242,12 +248,12 @@ function draw() {
   ctx.fillRect(0, 0, cw, ch);
 
   ctx.save();
-  ctx.translate(-cameraX, 0);
+  ctx.translate(-cameraX, -cameraY);
 
-  // Кирпичики
+  // Кирпичики (фон)
   ctx.fillStyle = '#16162a';
   for(let i = 0; i < LEVEL_WIDTH; i += 80) {
-    for(let j = 0; j < 1000; j += 80) {
+    for(let j = 0; j < LEVEL_HEIGHT; j += 80) {
       if ((i/80 + j/80) % 2 === 0) ctx.fillRect(i, j, 76, 76);
     }
   }
@@ -301,12 +307,8 @@ function draw() {
 }
 
 function loop() {
-  try {
-    update();
-    draw();
-  } catch (e) {
-    console.error(e);
-  }
+  update();
+  draw();
   requestAnimationFrame(loop);
 }
 
